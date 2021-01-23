@@ -1,54 +1,216 @@
-/**
- * 
- * https://leetcode-cn.com/problems/sliding-window-maximum/
- * 
- * 解法一: 双端队列
- * 
- * @param {number[]} nums
- * @param {number} k
- * @return {number[]}
- * 
- */
-var maxSlidingWindow = function(nums, k) {
-  if (!nums || nums.length === 0) {
-    return [];
+class Comparator {
+    /**
+     * @param {function(a: *, b: *)} [compareFunction] - It may be custom compare function that, let's
+     * say may compare custom objects together.
+     */
+    constructor(compareFunction) {
+      this.compare = compareFunction || Comparator.defaultCompareFunction;
+    }
+  
+    /**
+     * Default comparison function. It just assumes that "a" and "b" are strings or numbers.
+     * @param {(string|number)} a
+     * @param {(string|number)} b
+     * @returns {number}
+     */
+    static defaultCompareFunction(a, b) {
+      if (a === b) {
+        return 0;
+      }
+  
+      return a < b ? -1 : 1;
+    }
+  
+    /**
+     * Checks if two variables are equal.
+     * @param {*} a
+     * @param {*} b
+     * @return {boolean}
+     */
+    equal(a, b) {
+      return this.compare(a, b) === 0;
+    }
+  
+    /**
+     * Checks if variable "a" is less than "b".
+     * @param {*} a
+     * @param {*} b
+     * @return {boolean}
+     */
+    lessThan(a, b) {
+      return this.compare(a, b) < 0;
+    }
+  
+    /**
+     * Checks if variable "a" is greater than "b".
+     * @param {*} a
+     * @param {*} b
+     * @return {boolean}
+     */
+    greaterThan(a, b) {
+      return this.compare(a, b) > 0;
+    }
+  
+    /**
+     * Checks if variable "a" is less than or equal to "b".
+     * @param {*} a
+     * @param {*} b
+     * @return {boolean}
+     */
+    lessThanOrEqual(a, b) {
+      return this.lessThan(a, b) || this.equal(a, b);
+    }
+  
+    /**
+     * Checks if variable "a" is greater than or equal to "b".
+     * @param {*} a
+     * @param {*} b
+     * @return {boolean}
+     */
+    greaterThanOrEqual(a, b) {
+      return this.greaterThan(a, b) || this.equal(a, b);
+    }
+  
+    /**
+     * Reverses the comparison order.
+     */
+    reverse() {
+      const compareOriginal = this.compare;
+      this.compare = (a, b) => compareOriginal(b, a);
+    }
   }
 
-  const result = [];
-  let sWindow = nums.slice(0, k);
-  if (sWindow && sWindow.length > 0) {
-    result.push(getMaximun(sWindow));
-  }
-  if (k > nums.length) {
-    return result;
-  }
-  
-  for (let i = k; i < nums.length; i++) {
-    if (nums[i] > sWindow[0] || k === 1) {
-      sWindow = [];
-      sWindow.push(nums[i]);
+class Heap {
+    constructor(comparatorFunction) {
+        if (new.target === Heap) {
+            throw new TypeError('Cannot construct Heap instance directly');
+        }
+
+        this.heapContainer = [];
+        this.compare =  new Comparator(comparatorFunction);
     }
 
-    result.push(sWindow[0]);
-  }
+    getLeftChildIndex(parentIndex) {
+        return (2 * parentIndex) + 1;
+    }
 
-  return result;
-};
+    getRightChildIndex(parentIndex) {
+        return (2 * parentIndex) + 2;
+    }
 
-var getMaximun = (arr) => {
-  return arr.sort((a, b) => {
-    return b - a;
-  })[0];
+    getParentIndex(childIndex) {
+        return Math.floor((childIndex - 1) / 2);
+    }
+
+    hasParent(chilidIndex) {
+        return this.getParentIndex(chilidIndex) >= 0;
+    }
+
+    hasLeftChild(parentIndex) {
+        return this.getLeftChildIndex(parentIndex) < this.heapContainer.length;
+    }
+
+    hasRightChild(parentIndex) {
+        return this.getRightChildIndex(parentIndex) < this.heapContainer.length;
+    }
+
+    leftChild(parentIndex) {
+        return this.heapContainer[this.getRightChildIndex(parentIndex)];
+    }
+
+    rightChild(parentIndex) {
+        return this.heapContainer[this.getRightChildIndex(parentIndex)];
+    }
+
+    parent(childIndex) {
+        return this.heapContainer[this.getParentIndex(childIndex)];
+    }
+
+    swap(indexOne, indexTwo) {
+        const tmp = this.heapContainer[indexTwo];
+        this.heapContainer[indexTwo] = this.heapContainer[indexOne];
+        this.heapContainer[indexOne] = tmp;
+    }
+
+    peek() {
+        if (this.heapContainer.length === 0) {
+            return null;
+        }
+
+        return this.heapContainer[0];
+    }
+
+    poll() {
+        if (this.heapContainer.length === 0) {
+            return null;
+        }
+
+        if (this.heapContainer.length === 1) {
+            return this.heapContainer.pop();
+        }
+
+        const item = this.heapContainer[0];
+
+        this.heapContainer[0] = this.heapContainer.pop();
+        this.heapifyDown();
+
+        return item;
+    }
+
+    add(item) {
+        this.heapContainer.push(item);
+        this.heapifyUp();
+        return this;
+    }
+
+    // TODO： 
+    remove(item, comparator = this.compare) {
+        const numberOfItemsToRemove = this.find(item, comparator).length;
+
+        for (let iteration = 0; iteration < numberOfItemsToRemove; iteration += 1) {
+
+        }
+    }
+
+    find(item, comparator = this.compare) {
+        const foundItemIndices = [];
+
+        for (let itemIndex = 0; itemIndex < this.heapContainer.length; itemIndex += 1) {
+            if (comparator.equal(item, this.heapContainer[itemIndex])) {
+                foundItemIndices.push(itemIndex);
+            }
+        }
+
+        return foundItemIndices;
+    }
+
+    isEmpty() {
+        return !this.heapContainer.length;
+    }
+
+    toString() {
+        return this.heapContainer.toString();
+    }
+
+    heapifyUp() {
+        let currentIndex = customStartIndex || this.heapContainer.length - 1;
+
+        while (this.hasParent(currentIndex) &&
+        !this.pairIsInCorrectOrder(this.parent(currentIndex), this.heapContainer[currentIndex])) {
+            this.swap(currentIndex, this.getParentIndex(currentIndex));
+            currentIndex = this.getParentIndex(currentIndex);
+        }
+    }
+
+    // TODO: 
+    heapifyDown() {
+
+    }
+
+    pairIsInCorrectOrder(firstElement, secondElement) {
+        throw new Error(`
+            You have to implement heap pair comparision method
+            for ${firstElement} and ${secondElement} values.
+        `);
+    }
 }
-
-const nums1 = [1,3,-1,-3,5,3,6,7], k1 = 3;
-const result1 = maxSlidingWindow(nums1, k1);
-console.log(nums1, result1);
-
-const nums2 = [1,-1], k2 = 1;
-const result2 = maxSlidingWindow(nums2, k2);
-console.log(nums2, result2);
-
-const nums3 = [7,2,4], k3 = 2;
-const result3 = maxSlidingWindow(nums3, k3);
-console.log(nums3, result3);
